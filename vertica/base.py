@@ -7,7 +7,10 @@ from django.core.exceptions import ImproperlyConfigured
 import sys
 from django.db.backends.creation import BaseDatabaseCreation
 from django.utils import timezone
-from django.utils.six import text_type, binary_type
+try:
+    from django.utils.six import text_type, binary_type
+except ImportError:
+    from six import text_type, binary_type
 
 try:
     import vertica_python as Database
