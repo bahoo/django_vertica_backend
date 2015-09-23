@@ -5,7 +5,13 @@ import datetime
 
 from django.core.exceptions import ImproperlyConfigured
 import sys
-from django.db.backends.creation import BaseDatabaseCreation
+
+try:
+    from django.db.backends.base.creation import BaseDatabaseCreation
+except ImportError:
+    # Django < 1.7
+    from django.db.backends.creation import BaseDatabaseCreation  
+
 from django.utils import timezone
 try:
     from django.utils.six import text_type, binary_type
@@ -19,16 +25,36 @@ except ImportError:
     raise ImproperlyConfigured("Error loading vertica_python module: %s" % e)
 
 from django.db import utils
-from django.db.backends import BaseDatabaseWrapper, BaseDatabaseFeatures, BaseDatabaseValidation, \
-    BaseDatabaseOperations, BaseDatabaseClient, BaseDatabaseIntrospection
+
+try:
+    from django.db.backends.base.base import BaseDatabaseWrapper
+    from django.db.backends.base.client import BaseDatabaseClient
+    from django.db.backends.base.creation import BaseDatabaseCreation
+    from django.db.backends.base.features import BaseDatabaseFeatures
+    from django.db.backends.base.introspection import BaseDatabaseIntrospection
+    from django.db.backends.base.introspection import FieldInfo, TableInfo
+    from django.db.backends.base.operations import BaseDatabaseOperations
+    from django.db.backends.base.schema import BaseDatabaseSchemaEditor
+    from django.db.backends.base.validation import BaseDatabaseValidation
+except ImportError:
+    from django.db.backends import BaseDatabaseWrapper, BaseDatabaseFeatures, BaseDatabaseValidation, \
+        BaseDatabaseOperations, BaseDatabaseClient, BaseDatabaseIntrospection
+
 from django.conf import settings
 from django import VERSION
 
-if VERSION >= (1, 7, 0):
-    from django.db.backends.schema import BaseDatabaseSchemaEditor
 
+try:
+    from django.db.backends.base.schema import BaseDatabaseSchemaEditor
     class DatabaseSchemaEditor(BaseDatabaseSchemaEditor):
         pass
+
+except ImportError:
+    if VERSION >= (1, 7, 0):
+        from django.db.backends.schema import BaseDatabaseSchemaEditor
+
+        class DatabaseSchemaEditor(BaseDatabaseSchemaEditor):
+            pass
 
 
 class DatabaseCreation(BaseDatabaseCreation):
@@ -59,8 +85,8 @@ class DatabaseCreation(BaseDatabaseCreation):
     }
 
 
-DatabaseError = Database.DatabaseError
-IntegrityError = Database.IntegrityError
+DatabaseError = Database.errors.DatabaseError
+IntegrityError = Database.errors.IntegrityError
 
 
 class DatabaseFeatures(BaseDatabaseFeatures):
